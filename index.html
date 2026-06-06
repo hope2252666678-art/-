@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Support Ticket System</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
@@ -72,33 +73,21 @@
 </div>
 
 <script>
-    // 在全域宣告變數，確保按鈕能順利抓到函式
-    window.toggleChat = function() {
-        const box = document.getElementById('chatBox');
-        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-        if(box.style.display === 'flex') window.renderFAQ();
-    };
+    // ==========================================
+    // 1. 初始化 Supabase 
+    //    直接宣告一個新的變數名稱 dbClient，徹底避開 supabase 這個地雷詞
+    // ==========================================
+    const DB_URL = 'https://rsuzxlpohnojylqfegtf.supabase.co';
+    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c';
+    
+    // 利用上方 CDN 產生的 window.supabase 來建立連線，並存給 dbClient
+    const dbClient = window.supabase.createClient(DB_URL, DB_KEY);
 
-    window.switchView = function(viewId) {
-        document.getElementById('viewFAQ').style.display = 'none';
-        document.getElementById('viewSubmit').style.display = 'none';
-        document.getElementById('viewCheck').style.display = 'none';
-        document.getElementById(viewId).style.display = 'block';
-        document.getElementById('replyResult').style.display = 'none'; 
-    };
-
-    let supabase;
+    // ==========================================
+    // 2. 變數與函式 (全域宣告，保證按鈕點得到)
+    // ==========================================
     let currentLang = 'en';
     
-    // 使用反引號 ` 解決換行問題，並加上 try-catch 防呆
-    try {
-        const SUPABASE_URL = `https://rsuzxlpohnojylqfegtf.supabase.co`;
-        const SUPABASE_KEY = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c`.replace(/\s+/g, '');
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch (err) {
-        console.error("Supabase 連線異常，但泡泡介面仍會啟動：", err);
-    }
-
     const uiText = {
         en: { title: "Support", submitBtn: "📝 Leave a Message", checkBtn: "🔍 Check Ticket", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Ticket not found.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", btnBack: "🔙 Back" },
         ja: { title: "サポート", submitBtn: "📝 メッセージを残す", checkBtn: "🔍 返信を確認", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "チケットが見つかりません。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", btnBack: "🔙 戻る" },
@@ -112,6 +101,20 @@
              { q: "安全ですか？", a: "はい、ウイルス対策ソフトで誤検知された場合は除外リストに追加してください。", langCode: "ja-JP" }],
         zh: [{ q: "如何安裝輔助程式？", a: "請將檔案解壓縮後，點擊 main.exe 執行即可。", langCode: "zh-TW" },
              { q: "防毒軟體誤報怎麼辦？", a: "本程式保證無毒，請安心加入白名單或信任區使用。", langCode: "zh-TW" }]
+    };
+
+    window.toggleChat = function() {
+        const box = document.getElementById('chatBox');
+        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+        if(box.style.display === 'flex') window.renderFAQ();
+    };
+
+    window.switchView = function(viewId) {
+        document.getElementById('viewFAQ').style.display = 'none';
+        document.getElementById('viewSubmit').style.display = 'none';
+        document.getElementById('viewCheck').style.display = 'none';
+        document.getElementById(viewId).style.display = 'block';
+        document.getElementById('replyResult').style.display = 'none'; 
     };
 
     window.switchLang = function(lang) {
@@ -154,28 +157,31 @@
         return 'TK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
+    // ==========================================
+    // 3. 資料庫連線 (使用新的 dbClient 變數)
+    // ==========================================
     window.submitTicket = async function() {
-        if (!supabase) return alert('系統初始化中，請稍後再試。');
         const messageText = document.getElementById('userMsg').value;
         if (!messageText) return alert('請輸入您的問題！');
 
         const code = generateTicketCode();
-        const { error } = await supabase.from('tickets').insert([
+        
+        // 這裡改用 dbClient
+        const { error } = await dbClient.from('tickets').insert([
             { ticket_code: code, language: currentLang, user_message: messageText }
         ]);
 
         if (error) {
             console.error(error);
-            alert('送出失敗！請確認 Supabase 已建立 tickets 資料表，且 RLS (權限) 已關閉。');
+            alert('送出失敗！\n如果出現這個錯誤，通常是 Supabase 的 RLS 權限沒有關閉，或是 tickets 資料表還沒建立好。');
         } else {
-            alert(`【送出成功 SUCCESS!】\n\n請務必記住您的查詢代號：\n\n 👉 ${code} 👈\n\n開發者回覆後，您可以憑此代號查詢結果。`);
+            alert(`【送出成功】\n代號：${code}`);
             document.getElementById('userMsg').value = '';
             window.switchView('viewFAQ');
         }
     };
 
     window.checkReply = async function() {
-        if (!supabase) return alert('系統初始化中，請稍後再試。');
         const inputCode = document.getElementById('searchCode').value.trim().toUpperCase();
         if (!inputCode) return;
 
@@ -183,7 +189,8 @@
         resultArea.style.display = 'block';
         resultArea.innerText = uiText[currentLang].searching;
 
-        const { data, error } = await supabase
+        // 這裡也改用 dbClient
+        const { data, error } = await dbClient
             .from('tickets')
             .select('user_message, admin_reply')
             .eq('ticket_code', inputCode)
@@ -204,7 +211,7 @@
         resultArea.innerText = text;
     };
 
-    // 啟動
+    // 啟動預設語言
     window.switchLang('en');
 </script>
 </body>
