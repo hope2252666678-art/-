@@ -7,31 +7,23 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: transparent; margin: 0; }
-        
-        /* 右下角聊天泡泡與視窗樣式 */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; }
         .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
         .chat-bubble { width: 60px; height: 60px; background: #2b2b2b; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.3s; }
         .chat-bubble:hover { transform: scale(1.1); }
-        
         .chat-box { display: none; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); position: absolute; bottom: 80px; right: 0; flex-direction: column; overflow: hidden; }
         .chat-header { background: #2b2b2b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .lang-btn { cursor: pointer; padding: 4px 8px; margin-left: 5px; background: #444; border-radius: 4px; font-size: 12px; transition: 0.2s; color: white; border: none;}
         .lang-btn:hover { background: #007bff; }
-        
         .chat-body { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* 內部元素樣式 */
         .faq-item { background: #f8f9fa; padding: 12px; border-left: 4px solid #007bff; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 14px; margin-bottom: 10px; }
         .faq-item:hover { background: #e2e6ea; }
-        
         textarea, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 10px; }
         textarea { resize: none; height: 100px; }
         button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { background: #0056b3; }
         .btn-secondary { background: #6c757d; margin-top: 10px; }
         .btn-secondary:hover { background: #5a6268; }
-        
         .nav-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .nav-buttons button { font-size: 13px; background: #e9ecef; color: #333; }
         .nav-buttons button:hover { background: #d3d9df; }
@@ -72,9 +64,7 @@
                 <h4 style="margin-top:0;" id="checkTitle">Check Reply</h4>
                 <input type="text" id="searchCode" placeholder="Enter Ticket Code (e.g. TK-XXXXXX)">
                 <button onclick="checkReply()" id="btnSearchTicket">🔍 Search / 查詢</button>
-                
                 <div id="replyResult" style="margin-top: 15px; padding: 10px; background: #f1f8ff; border-radius: 6px; font-size: 14px; white-space: pre-wrap; display:none;"></div>
-                
                 <button class="btn-secondary" onclick="switchView('viewFAQ')" id="btnBack2">🔙 Back / 返回</button>
             </div>
         </div>
@@ -82,16 +72,33 @@
 </div>
 
 <script>
-    // ==========================================
-    // 1. 初始化 Supabase
-    // ==========================================
-    const SUPABASE_URL = 'https://rsuzxlpohnojylqfegtf.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    // ==========================================
-    // 2. 語言與資料設定
-    // ==========================================
+    // 在全域宣告變數，確保按鈕能順利抓到函式
+    window.toggleChat = function() {
+        const box = document.getElementById('chatBox');
+        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+        if(box.style.display === 'flex') window.renderFAQ();
+    };
+
+    window.switchView = function(viewId) {
+        document.getElementById('viewFAQ').style.display = 'none';
+        document.getElementById('viewSubmit').style.display = 'none';
+        document.getElementById('viewCheck').style.display = 'none';
+        document.getElementById(viewId).style.display = 'block';
+        document.getElementById('replyResult').style.display = 'none'; 
+    };
+
+    let supabase;
     let currentLang = 'en';
+    
+    // 使用反引號 ` 解決換行問題，並加上 try-catch 防呆
+    try {
+        const SUPABASE_URL = `https://rsuzxlpohnojylqfegtf.supabase.co`;
+        const SUPABASE_KEY = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c`.replace(/\s+/g, '');
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch (err) {
+        console.error("Supabase 連線異常，但泡泡介面仍會啟動：", err);
+    }
+
     const uiText = {
         en: { title: "Support", submitBtn: "📝 Leave a Message", checkBtn: "🔍 Check Ticket", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Ticket not found.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", btnBack: "🔙 Back" },
         ja: { title: "サポート", submitBtn: "📝 メッセージを残す", checkBtn: "🔍 返信を確認", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "チケットが見つかりません。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", btnBack: "🔙 戻る" },
@@ -107,24 +114,7 @@
              { q: "防毒軟體誤報怎麼辦？", a: "本程式保證無毒，請安心加入白名單或信任區使用。", langCode: "zh-TW" }]
     };
 
-    // ==========================================
-    // 3. UI 互動邏輯
-    // ==========================================
-    function toggleChat() {
-        const box = document.getElementById('chatBox');
-        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-        if(box.style.display === 'flex') renderFAQ();
-    }
-
-    function switchView(viewId) {
-        document.getElementById('viewFAQ').style.display = 'none';
-        document.getElementById('viewSubmit').style.display = 'none';
-        document.getElementById('viewCheck').style.display = 'none';
-        document.getElementById(viewId).style.display = 'block';
-        document.getElementById('replyResult').style.display = 'none'; 
-    }
-
-    function switchLang(lang) {
+    window.switchLang = function(lang) {
         currentLang = lang;
         document.getElementById('headerTitle').innerText = uiText[lang].title;
         document.getElementById('userMsg').placeholder = uiText[lang].placeholder;
@@ -134,62 +124,58 @@
         document.getElementById('btnSearchTicket').innerText = uiText[lang].btnSearch;
         document.getElementById('btnBack1').innerText = uiText[lang].btnBack;
         document.getElementById('btnBack2').innerText = uiText[lang].btnBack;
-        
-        renderFAQ();
-        switchView('viewFAQ');
-    }
+        window.renderFAQ();
+        window.switchView('viewFAQ');
+    };
 
-    function renderFAQ() {
+    window.renderFAQ = function() {
         const list = document.getElementById('faqList');
         list.innerHTML = '';
         qaData[currentLang].forEach(item => {
             const div = document.createElement('div');
             div.className = 'faq-item';
             div.innerText = item.q;
-            div.onclick = () => { alert(item.a); speak(item.a, item.langCode); };
+            div.onclick = () => { alert(item.a); window.speak(item.a, item.langCode); };
             list.appendChild(div);
         });
-        
         const navBtns = document.querySelectorAll('.nav-buttons button');
         navBtns[0].innerText = uiText[currentLang].submitBtn;
         navBtns[1].innerText = uiText[currentLang].checkBtn;
-    }
+    };
 
-    function speak(text, lang) {
+    window.speak = function(text, lang) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang;
         window.speechSynthesis.speak(utterance);
-    }
+    };
 
-    // ==========================================
-    // 4. 資料庫核心邏輯
-    // ==========================================
     function generateTicketCode() {
         return 'TK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
-    async function submitTicket() {
+    window.submitTicket = async function() {
+        if (!supabase) return alert('系統初始化中，請稍後再試。');
         const messageText = document.getElementById('userMsg').value;
-        if (!messageText) return alert('Please enter your message.');
+        if (!messageText) return alert('請輸入您的問題！');
 
         const code = generateTicketCode();
-        
         const { error } = await supabase.from('tickets').insert([
             { ticket_code: code, language: currentLang, user_message: messageText }
         ]);
 
         if (error) {
             console.error(error);
-            alert('Error! 請確認 Supabase 的 URL/KEY 是否正確，或表格權限設定 (RLS) 是否關閉。');
+            alert('送出失敗！請確認 Supabase 已建立 tickets 資料表，且 RLS (權限) 已關閉。');
         } else {
-            alert(`SUCCESS!\nYour ticket code is: ${code}\nPlease save it!`);
+            alert(`【送出成功 SUCCESS!】\n\n請務必記住您的查詢代號：\n\n 👉 ${code} 👈\n\n開發者回覆後，您可以憑此代號查詢結果。`);
             document.getElementById('userMsg').value = '';
-            switchView('viewFAQ');
+            window.switchView('viewFAQ');
         }
-    }
+    };
 
-    async function checkReply() {
+    window.checkReply = async function() {
+        if (!supabase) return alert('系統初始化中，請稍後再試。');
         const inputCode = document.getElementById('searchCode').value.trim().toUpperCase();
         if (!inputCode) return;
 
@@ -211,15 +197,15 @@
         let text = `Q: ${data.user_message}\n\n`;
         if (data.admin_reply) {
             text += `A (${uiText[currentLang].developerReply}):\n${data.admin_reply}`;
-            speak(data.admin_reply, currentLang === 'zh' ? 'zh-TW' : (currentLang === 'ja' ? 'ja-JP' : 'en-US'));
+            window.speak(data.admin_reply, currentLang === 'zh' ? 'zh-TW' : (currentLang === 'ja' ? 'ja-JP' : 'en-US'));
         } else {
             text += `A: ${uiText[currentLang].processing}`;
         }
         resultArea.innerText = text;
-    }
+    };
 
-    // 啟動預設英文
-    switchLang('en');
+    // 啟動
+    window.switchLang('en');
 </script>
 </body>
 </html>
