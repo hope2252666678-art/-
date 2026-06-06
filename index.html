@@ -2,128 +2,216 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>AI Support Widget</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Support Ticket System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        /* 右下角聊天泡泡樣式 */
-        .chat-widget {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            font-family: Arial, sans-serif;
-            z-index: 1000;
-        }
-        .chat-bubble {
-            width: 60px;
-            height: 60px;
-            background: #007bff;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .chat-box {
-            display: none;
-            width: 350px;
-            height: 450px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            position: absolute;
-            bottom: 75px;
-            right: 0;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .chat-header { background: #007bff; color: white; padding: 15px; display: flex; justify-content: space-between; }
-        .chat-body { padding: 15px; flex: 1; overflow-y: auto; }
-        .lang-btn { cursor: pointer; padding: 5px; margin-right: 5px; border: 1px solid #ccc; border-radius: 3px; }
-        .faq-item { background: #f8f9fa; padding: 8px; margin-bottom: 8px; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; }
+        
+        /* 右下角聊天泡泡與視窗樣式 */
+        .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .chat-bubble { width: 60px; height: 60px; background: #2b2b2b; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.3s; }
+        .chat-bubble:hover { transform: scale(1.1); }
+        
+        .chat-box { display: none; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); position: absolute; bottom: 80px; right: 0; flex-direction: column; overflow: hidden; }
+        .chat-header { background: #2b2b2b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .lang-btn { cursor: pointer; padding: 4px 8px; margin-left: 5px; background: #444; border-radius: 4px; font-size: 12px; transition: 0.2s; }
+        .lang-btn:hover, .lang-btn.active { background: #007bff; }
+        
+        .chat-body { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* 內部元素樣式 */
+        .faq-item { background: #f8f9fa; padding: 12px; border-left: 4px solid #007bff; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 14px; }
         .faq-item:hover { background: #e2e6ea; }
+        
+        textarea, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 10px; }
+        textarea { resize: none; height: 100px; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #0056b3; }
+        .btn-secondary { background: #6c757d; margin-top: 10px; }
+        .btn-secondary:hover { background: #5a6268; }
+        
+        .nav-buttons { display: flex; gap: 10px; margin-top: auto; }
+        .nav-buttons button { font-size: 13px; background: #e9ecef; color: #333; }
+        .nav-buttons button:hover { background: #d3d9df; }
     </style>
 </head>
 <body>
 
 <div class="chat-widget">
-    <!-- 聊天泡泡圖示 -->
     <div class="chat-bubble" onclick="toggleChat()">💬</div>
     
-    <!-- 聊天視窗主體 -->
     <div class="chat-box" id="chatBox">
         <div class="chat-header">
-            <span>AI Support (Multi-Language)</span>
+            <span id="headerTitle">Support</span>
             <div>
-                <span class="lang-btn" onclick="switchLang('zh')">🇹🇼 中</span>
-                <span class="lang-btn" onclick="switchLang('en')">🇺🇸 EN</span>
-                <span class="lang-btn" onclick="switchLang('ja')">🇯🇵 日</span>
+                <span class="lang-btn" onclick="switchLang('en')">EN</span>
+                <span class="lang-btn" onclick="switchLang('ja')">JA</span>
+                <span class="lang-btn" onclick="switchLang('zh')">ZH</span>
             </div>
         </div>
-        <div class="chat-body" id="chatBody">
-            <!-- QA 內容會由 JS 動態動態渲染 -->
+        
+        <div class="chat-body">
+            <div id="viewFAQ">
+                <div id="faqList"></div>
+                <div class="nav-buttons">
+                    <button onclick="switchView('viewSubmit')">📝 留言給開發者</button>
+                    <button onclick="switchView('viewCheck')">🔍 查詢對話回覆</button>
+                </div>
+            </div>
+
+            <div id="viewSubmit" style="display: none;">
+                <h4 style="margin-top:0;">Submit a Request</h4>
+                <textarea id="userMsg" placeholder="Please describe your issue..."></textarea>
+                <button onclick="submitTicket()">📤 Submit / 送出</button>
+                <button class="btn-secondary" onclick="switchView('viewFAQ')">🔙 Back / 返回</button>
+            </div>
+
+            <div id="viewCheck" style="display: none;">
+                <h4 style="margin-top:0;">Check Reply</h4>
+                <input type="text" id="searchCode" placeholder="Enter Ticket Code (e.g. TK-XXXXXX)">
+                <button onclick="checkReply()">🔍 Search / 查詢</button>
+                
+                <div id="replyResult" style="margin-top: 15px; padding: 10px; background: #f1f8ff; border-radius: 6px; font-size: 14px; white-space: pre-wrap; display:none;"></div>
+                
+                <button class="btn-secondary" onclick="switchView('viewFAQ')">🔙 Back / 返回</button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // 1. 三語 QA 資料庫設定
-    const qaData = {
-        zh: [
-            { q: "如何安裝輔助程式？", a: "請下載解壓縮後，以系統管理員身份執行 main.exe。", langCode: "zh-TW" },
-            { q: "防毒軟體誤報怎麼辦？", a: "本程式無毒，因涉及自動化操作會被誤標，請加入信任區。", langCode: "zh-TW" }
-        ],
-        en: [
-            { q: "How to install the helper tool?", a: "Download the zip, extract it, and run main.exe as Administrator.", langCode: "en-US" },
-            { q: "Antivirus blocked it, what should I do?", a: "This is a false positive. Please add our folder to your antivirus exclusion list.", langCode: "en-US" }
-        ],
-        ja: [
-            { q: "インストール方法は？", a: "ファイルを解凍し、main.exeを管理者として実行してください。", langCode: "ja-JP" },
-            { q: "ウイルス対策ソフトに検知されました", a: "これは誤検知です。安心してお使いいただくため、除外リストに追加してください。", langCode: "ja-JP" }
-        ]
+    // ==========================================
+    // 1. 初始化 Supabase (請換成你自己的)
+    // ==========================================
+    const SUPABASE_URL = https://rsuzxlpohnojylqfegtf.supabase.co/rest/v1/';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ==========================================
+    // 2. 語言與資料設定
+    // ==========================================
+    let currentLang = 'en';
+    const uiText = {
+        en: { title: "Support", submitBtn: "📝 Leave a Message", checkBtn: "🔍 Check Ticket", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Ticket not found.", processing: "Developer is processing...", developerReply: "Developer Reply" },
+        ja: { title: "サポート", submitBtn: "📝 開発者にメッセージ", checkBtn: "🔍 返信を確認", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "チケットが見つかりません。", processing: "現在対応中です...", developerReply: "開発者の返信" },
+        zh: { title: "技術支援", submitBtn: "📝 留言給開發者", checkBtn: "🔍 查詢對話回覆", placeholder: "請描述您遇到的問題...", searching: "查詢中...", notFound: "找不到此代號。", processing: "開發者正在處理中...", developerReply: "開發者回覆" }
     };
 
-    let currentLang = 'en'; // 預設英文
+    const qaData = {
+        en: [{ q: "How to install the tool?", a: "Extract the zip file and run main.exe as Administrator.", langCode: "en-US" }],
+        ja: [{ q: "インストール方法は？", a: "ファイルを解凍し、main.exeを管理者として実行してください。", langCode: "ja-JP" }],
+        zh: [{ q: "如何安裝輔助程式？", a: "請將檔案解壓縮後，點擊 main.exe 執行即可。", langCode: "zh-TW" }]
+    };
 
+    // ==========================================
+    // 3. UI 互動邏輯 (切換畫面、切換語言、播放語音)
+    // ==========================================
     function toggleChat() {
         const box = document.getElementById('chatBox');
         box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-        if(box.style.display === 'flex') renderQA();
+        if(box.style.display === 'flex') renderFAQ();
+    }
+
+    function switchView(viewId) {
+        document.getElementById('viewFAQ').style.display = 'none';
+        document.getElementById('viewSubmit').style.display = 'none';
+        document.getElementById('viewCheck').style.display = 'none';
+        document.getElementById(viewId).style.display = 'block';
+        document.getElementById('replyResult').style.display = 'none'; // 重置查詢結果
     }
 
     function switchLang(lang) {
         currentLang = lang;
-        renderQA();
+        document.getElementById('headerTitle').innerText = uiText[lang].title;
+        document.getElementById('userMsg').placeholder = uiText[lang].placeholder;
+        renderFAQ();
+        switchView('viewFAQ');
     }
 
-    // 2. 渲染 QA 列表與語音播放綁定
-    function renderQA() {
-        const body = document.getElementById('chatBody');
-        body.innerHTML = `<h4>FAQ (${currentLang.toUpperCase()})</h4>`;
-        
+    function renderFAQ() {
+        const list = document.getElementById('faqList');
+        list.innerHTML = '';
         qaData[currentLang].forEach(item => {
             const div = document.createElement('div');
             div.className = 'faq-item';
             div.innerText = item.q;
-            div.onclick = () => {
-                alert(item.a); // 畫面上顯示答案
-                speak(item.a, item.langCode); // 功能一：播放語音
-            };
-            body.appendChild(div);
+            div.onclick = () => { alert(item.a); speak(item.a, item.langCode); };
+            list.appendChild(div);
         });
-
-        // 這裡後續可以加上「輸入對話代號」與「我要留言」的 HTML 表單
+        
+        const navBtns = document.querySelectorAll('.nav-buttons button');
+        navBtns[0].innerText = uiText[currentLang].submitBtn;
+        navBtns[1].innerText = uiText[currentLang].checkBtn;
     }
 
-    // 功能一的核心：網頁語音輸出 (TTS)
     function speak(text, lang) {
-        // 先停止之前的播放，避免重疊
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang;
         window.speechSynthesis.speak(utterance);
     }
+
+    // ==========================================
+    // 4. 資料庫核心邏輯 (新增留言、查詢回覆)
+    // ==========================================
+    function generateTicketCode() {
+        return 'TK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+
+    async function submitTicket() {
+        const messageText = document.getElementById('userMsg').value;
+        if (!messageText) return alert('Please enter your message.');
+
+        const code = generateTicketCode();
+        
+        // 寫入 Supabase (如果報錯，通常是因為資料表名稱不對，或沒設定 RLS 權限)
+        const { error } = await supabase.from('tickets').insert([
+            { ticket_code: code, language: currentLang, user_message: messageText }
+        ]);
+
+        if (error) {
+            console.error(error);
+            alert('Error connecting to database. Have you created the "tickets" table?');
+        } else {
+            alert(`SUCCESS!\nYour ticket code is: ${code}\nPlease save it!`);
+            document.getElementById('userMsg').value = '';
+            switchView('viewFAQ');
+        }
+    }
+
+    async function checkReply() {
+        const inputCode = document.getElementById('searchCode').value.trim().toUpperCase();
+        if (!inputCode) return;
+
+        const resultArea = document.getElementById('replyResult');
+        resultArea.style.display = 'block';
+        resultArea.innerText = uiText[currentLang].searching;
+
+        const { data, error } = await supabase
+            .from('tickets')
+            .select('user_message, admin_reply')
+            .eq('ticket_code', inputCode)
+            .single();
+
+        if (error || !data) {
+            resultArea.innerText = uiText[currentLang].notFound;
+            return;
+        }
+
+        let text = `Q: ${data.user_message}\n\n`;
+        if (data.admin_reply) {
+            text += `A (${uiText[currentLang].developerReply}):\n${data.admin_reply}`;
+            // 如果你想，這裡可以加上 speak(data.admin_reply, langCode) 自動唸出回覆
+        } else {
+            text += `A: ${uiText[currentLang].processing}`;
+        }
+        resultArea.innerText = text;
+    }
+
+    // 初始化預設語言
+    switchLang('en');
 </script>
 </body>
 </html>
