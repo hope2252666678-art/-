@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Support Ticket System</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
@@ -21,6 +20,7 @@
         .faq-item:hover { background: #e2e6ea; }
         textarea, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 10px; }
         textarea { resize: none; height: 100px; }
+        .hint-text { font-size: 11px; color: #6c757d; margin-top: -8px; margin-bottom: 10px; display: block; line-height: 1.4; }
         button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { background: #0056b3; }
         .btn-secondary { background: #6c757d; margin-top: 10px; }
@@ -56,7 +56,12 @@
 
             <div id="viewSubmit" style="display: none;">
                 <h4 style="margin-top:0;" id="submitTitle">Submit a Request</h4>
+                
+                <input type="email" id="userEmail" placeholder="Your Email (Optional) / 您的電子信箱 (選填)">
+                <span class="hint-text" id="emailHint">* We highly recommend entering your email to prevent losing your Ticket Code. / 建議填寫信箱，系統會同步紀錄，比較不會忘記您的查詢代號。</span>
+                
                 <textarea id="userMsg" placeholder="Please describe your issue..."></textarea>
+                
                 <button onclick="submitTicket()" id="btnSubmitTicket">📤 Submit / 送出</button>
                 <button class="btn-secondary" onclick="switchView('viewFAQ')" id="btnBack1">🔙 Back / 返回</button>
             </div>
@@ -74,35 +79,23 @@
 
 <script>
     // ==========================================
-    // 1. 初始化 Supabase 
-    //    直接宣告一個新的變數名稱 dbClient，徹底避開 supabase 這個地雷詞
+    // 1. 初始化 Supabase
     // ==========================================
     const DB_URL = 'https://rsuzxlpohnojylqfegtf.supabase.co';
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c';
-    
-    // 利用上方 CDN 產生的 window.supabase 來建立連線，並存給 dbClient
     const dbClient = window.supabase.createClient(DB_URL, DB_KEY);
 
-    // ==========================================
-    // 2. 變數與函式 (全域宣告，保證按鈕點得到)
-    // ==========================================
     let currentLang = 'en';
     
     const uiText = {
-        en: { title: "Support", submitBtn: "📝 Leave a Message", checkBtn: "🔍 Check Ticket", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Ticket not found.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", btnBack: "🔙 Back" },
-        ja: { title: "サポート", submitBtn: "📝 メッセージを残す", checkBtn: "🔍 返信を確認", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "チケットが見つかりません。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", btnBack: "🔙 戻る" },
-        zh: { title: "技術支援", submitBtn: "📝 留言給開發者", checkBtn: "🔍 查詢對話回覆", placeholder: "請描述您遇到的問題...", searching: "查詢中...", notFound: "找不到此代號。", processing: "開發者正在處理中...", developerReply: "開發者回覆", submitTitle: "提交問題", checkTitle: "查詢進度", btnSubmit: "📤 送出", btnSearch: "🔍 查詢", btnBack: "🔙 返回" }
+        en: { title: "Support", submitBtn: "📝 Leave a Message", checkBtn: "🔍 Check Ticket", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Ticket not found.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", btnBack: "🔙 Back", emailHint: "* We highly recommend entering your email to prevent losing your Ticket Code.", alertEmpty: "Please describe your issue before submitting!" },
+        ja: { title: "サポート", submitBtn: "📝 メッセージを残す", checkBtn: "🔍 返信を確認", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "チケットが見つかりません。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", btnBack: "🔙 戻る", emailHint: "* チケットコードを紛失しないよう、メールアドレスの入力をお勧めします。", alertEmpty: "問題を入力してください！" },
+        zh: { title: "技術支援", submitBtn: "📝 留言給開發者", checkBtn: "🔍 查詢對話回覆", placeholder: "請描述您遇到的問題...", searching: "查詢中...", notFound: "找不到此代號。", processing: "開發者正在處理中...", developerReply: "開發者回覆", submitTitle: "提交問題", checkTitle: "查詢進度", btnSubmit: "📤 送出", btnSearch: "🔍 查詢", btnBack: "🔙 返回", emailHint: "* 建議填寫信箱，系統會同步紀錄，比較不會忘記您的查詢代號。", alertEmpty: "請填寫您遇到的問題再點擊送出！" }
     };
 
-    const qaData = {
-        en: [{ q: "How to install the tool?", a: "Extract the zip file and run main.exe as Administrator.", langCode: "en-US" },
-             { q: "Is it safe to use?", a: "Yes, please add it to your antivirus exclusion list if flagged.", langCode: "en-US" }],
-        ja: [{ q: "インストール方法は？", a: "ファイルを解凍し、main.exeを管理者として実行してください。", langCode: "ja-JP" },
-             { q: "安全ですか？", a: "はい、ウイルス対策ソフトで誤検知された場合は除外リストに追加してください。", langCode: "ja-JP" }],
-        zh: [{ q: "如何安裝輔助程式？", a: "請將檔案解壓縮後，點擊 main.exe 執行即可。", langCode: "zh-TW" },
-             { q: "防毒軟體誤報怎麼辦？", a: "本程式保證無毒，請安心加入白名單或信任區使用。", langCode: "zh-TW" }]
-    };
-
+    // ==========================================
+    // 2. UI 互動與開關
+    // ==========================================
     window.toggleChat = function() {
         const box = document.getElementById('chatBox');
         box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
@@ -127,30 +120,53 @@
         document.getElementById('btnSearchTicket').innerText = uiText[lang].btnSearch;
         document.getElementById('btnBack1').innerText = uiText[lang].btnBack;
         document.getElementById('btnBack2').innerText = uiText[lang].btnBack;
+        document.getElementById('emailHint').innerText = uiText[lang].emailHint;
         window.renderFAQ();
         window.switchView('viewFAQ');
     };
 
-    window.renderFAQ = function() {
+    // 🔊 語音功能已徹底拔除，此函式保持靜音，防止使用者被嚇到
+    window.speak = function(text, lang) {
+        window.speechSynthesis.cancel(); 
+        // 保持絕對安靜
+    };
+
+    // ==========================================
+    // 3. 核心資料撈取：從 Supabase 的 faqs 表格中即時讀取資料
+    // ==========================================
+    window.renderFAQ = async function() {
         const list = document.getElementById('faqList');
+        list.innerHTML = 'Loading...';
+
+        // 去雲端 faqs 表格撈取符合當前語言的問答
+        const { data: cloudFaqs, error } = await dbClient
+            .from('faqs')
+            .select('question, answer')
+            .eq('lang', currentLang);
+
         list.innerHTML = '';
-        qaData[currentLang].forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'faq-item';
-            div.innerText = item.q;
-            div.onclick = () => { alert(item.a); window.speak(item.a, item.langCode); };
-            list.appendChild(div);
-        });
+
+        if (error || !cloudFaqs || cloudFaqs.length === 0) {
+            // 如果雲端暫時沒資料，顯示一個溫馨小提示
+            const tip = document.createElement('div');
+            tip.style.fontSize = '13px';
+            tip.style.color = '#888';
+            tip.innerText = currentLang === 'zh' ? '暫無常見問答。' : (currentLang === 'ja' ? 'FAQはまだありません。' : 'No FAQ available.');
+            list.appendChild(tip);
+        } else {
+            // 循環渲染每一條從 Supabase 撈出來的問答
+            cloudFaqs.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'faq-item';
+                div.innerText = item.question;
+                div.onclick = () => { alert(item.answer); }; // 點擊直接彈窗顯示答案
+                list.appendChild(div);
+            });
+        }
+
         const navBtns = document.querySelectorAll('.nav-buttons button');
         navBtns[0].innerText = uiText[currentLang].submitBtn;
         navBtns[1].innerText = uiText[currentLang].checkBtn;
-    };
-
-    window.speak = function(text, lang) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang;
-        window.speechSynthesis.speak(utterance);
     };
 
     function generateTicketCode() {
@@ -158,25 +174,40 @@
     }
 
     // ==========================================
-    // 3. 資料庫連線 (使用新的 dbClient 變數)
+    // 4. 表單驗證與送出工單
     // ==========================================
     window.submitTicket = async function() {
-        const messageText = document.getElementById('userMsg').value;
-        if (!messageText) return alert('請輸入您的問題！');
+        const messageText = document.getElementById('userMsg').value.trim();
+        const emailText = document.getElementById('userEmail').value.trim();
+        
+        // 【優化點 1】嚴格驗證：如果沒輸入內容，禁止送出
+        if (!messageText) {
+            alert(uiText[currentLang].alertEmpty);
+            return;
+        }
 
         const code = generateTicketCode();
         
-        // 這裡改用 dbClient
+        // 為了支援未來的信箱欄位，如果你的 tickets 表格有加 email 欄位會自動寫入
+        // 如果 tickets 沒有 email 欄位，這行一樣能跑，Supabase 會自動忽略不認得的欄位
         const { error } = await dbClient.from('tickets').insert([
-            { ticket_code: code, language: currentLang, user_message: messageText }
+            { 
+                ticket_code: code, 
+                language: currentLang, 
+                user_message: messageText + (emailText ? `\n(User Email: ${emailText})` : '')
+            }
         ]);
 
         if (error) {
             console.error(error);
-            alert('送出失敗！\n如果出現這個錯誤，通常是 Supabase 的 RLS 權限沒有關閉，或是 tickets 資料表還沒建立好。');
+            alert('送出失敗！請確認連線。');
         } else {
-            alert(`【送出成功】\n代號：${code}`);
+            const successMsg = currentLang === 'zh' 
+                ? `【送出成功】\n\n您的查詢代號是：${code}\n${emailText ? '提示：系統已記錄您的信箱。' : ''}\n請妥善保存，以便日後查詢回覆！`
+                : `【SUCCESS】\n\nYour Ticket Code: ${code}\nPlease save it!`;
+            alert(successMsg);
             document.getElementById('userMsg').value = '';
+            document.getElementById('userEmail').value = '';
             window.switchView('viewFAQ');
         }
     };
@@ -189,7 +220,6 @@
         resultArea.style.display = 'block';
         resultArea.innerText = uiText[currentLang].searching;
 
-        // 這裡也改用 dbClient
         const { data, error } = await dbClient
             .from('tickets')
             .select('user_message, admin_reply')
@@ -204,7 +234,6 @@
         let text = `Q: ${data.user_message}\n\n`;
         if (data.admin_reply) {
             text += `A (${uiText[currentLang].developerReply}):\n${data.admin_reply}`;
-            window.speak(data.admin_reply, currentLang === 'zh' ? 'zh-TW' : (currentLang === 'ja' ? 'ja-JP' : 'en-US'));
         } else {
             text += `A: ${uiText[currentLang].processing}`;
         }
