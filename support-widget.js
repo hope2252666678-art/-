@@ -16,17 +16,22 @@
         .lang-btn:hover { background: #007bff; }
         .chat-body { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
         .menu-btn { background: #fff; border: 1px solid #007bff; color: #007bff; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,123,255,0.1); }
-        .menu-btn:hover { background: #007bff; color: #white; transform: translateY(-2px); }
+        .menu-btn:hover { background: #007bff; color: white; transform: translateY(-2px); }
         .faq-item { background: #f8f9fa; padding: 12px; border-left: 4px solid #007bff; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 14px; margin-bottom: 10px; color: #333; text-align: left; }
         .faq-item:hover { background: #e2e6ea; }
         .answer-box { background: #f1f8ff; padding: 15px; border-radius: 8px; font-size: 14px; line-height: 1.6; color: #333; white-space: pre-wrap; text-align: left; border: 1px solid #bde0ff; }
         .chat-body textarea, .chat-body input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; font-size: 14px; }
         .chat-body textarea { resize: none; height: 100px; }
         .hint-text { font-size: 11px; color: #6c757d; margin-top: -8px; margin-bottom: 10px; display: block; line-height: 1.4; text-align: left; }
-        .chat-body button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .chat-body button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
         .chat-body button:hover { background: #0056b3; }
         .chat-body .btn-secondary { background: #6c757d; margin-top: 10px; }
         .chat-body .btn-secondary:hover { background: #5a6268; }
+        /* 複製區塊專用樣式 */
+        .copy-area { display: flex; gap: 8px; margin-bottom: 15px; }
+        .copy-area input { font-size: 20px; text-align: center; font-weight: bold; color: #007bff; letter-spacing: 2px; margin-bottom: 0; background: #fff; cursor: text; }
+        .copy-area button { width: 80px; background: #28a745; margin-bottom: 0; }
+        .copy-area button:hover { background: #218838; }
     `;
     document.head.appendChild(style);
 
@@ -46,9 +51,9 @@
             <div class="chat-body">
                 <div id="viewHome" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
                     <div class="menu-btn" onclick="window.switchView('viewFAQ')" id="btnGoFAQ">❓ 常見問題</div>
+                    <div class="menu-btn" onclick="window.switchView('viewContact')" id="btnGoContact">📞 聯絡我們</div>
                     <div class="menu-btn" onclick="window.switchView('viewSubmit')" id="btnGoSubmit">📝 聯絡客服 / 續問</div>
                     <div class="menu-btn" onclick="window.switchView('viewCheck')" id="btnGoCheck">🔍 查詢進度</div>
-                    <div class="menu-btn" style="background:#f8f9fa; border-color:#ccc; color:#555;" onclick="window.switchView('viewContact')" id="btnGoContact">📞 聯絡我們</div>
                 </div>
 
                 <div id="viewContact" style="display: none;">
@@ -57,7 +62,7 @@
                         <strong>LINE:</strong> 1111<br><br>
                         <strong>Email:</strong> 11111
                     </div>
-                    <button class="btn-secondary" onclick="window.switchView('viewHome')" id="btnBackHome4">🔙 Main Menu / 返回首頁</button>
+                    <button class="btn-secondary" onclick="window.switchView('viewHome')" id="btnBackHome4">🔙 Main Menu</button>
                 </div>
 
                 <div id="viewFAQ" style="display: none;">
@@ -81,6 +86,18 @@
                     <button class="btn-secondary" onclick="window.switchView('viewHome')" id="btnBackHome2">🔙 Main Menu</button>
                 </div>
 
+                <div id="viewSuccess" style="display: none; text-align: center; margin-top: 10px;">
+                    <h2 style="color: #28a745; margin-top: 0; margin-bottom: 10px;">✅</h2>
+                    <h4 style="margin-top: 0;" id="successTitle">建立成功</h4>
+                    <p style="font-size: 13px; color: #555;" id="successDesc">請複製並妥善保存您的查詢單號：</p>
+                    <div class="copy-area">
+                        <input type="text" id="successTokenDisplay" readonly>
+                        <button onclick="window.copyToken()" id="btnCopyCode">複製</button>
+                    </div>
+                    <p class="hint-text" style="text-align: center;" id="successHint">日後需使用「信箱 + 此單號」查詢回覆或續問。</p>
+                    <button class="btn-secondary" onclick="window.switchView('viewHome')" id="btnBackHome5">🔙 Main Menu</button>
+                </div>
+
                 <div id="viewCheck" style="display: none;">
                     <h4 style="margin-top:0;" id="checkTitle">Check Reply</h4>
                     <input type="email" id="checkEmail" placeholder="* Your Email (Required) / 電子信箱">
@@ -100,9 +117,9 @@
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c';
 
     const uiText = {
-        en: { title: "Support", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Invalid Email or Ticket Code.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request / Reply", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", alertEmpty: "Please enter a message!", alertEmail: "Please enter a valid email address containing '@'.", alertTokenFail: "Invalid Ticket Code and Email combination. Please leave the code field blank if you want to create a new ticket.", submitHint: "* Leave Ticket Code blank for new issues. Enter your 5-character code to reply to an existing thread.", homeFAQ: "❓ FAQ", homeSubmit: "📝 Submit / Reply", homeCheck: "🔍 Check Status", homeContact: "📞 Contact Us", contactTitle: "Contact Info", backHome: "🔙 Main Menu", backList: "🔙 Back to List" },
-        ja: { title: "サポート", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "メールアドレスまたはコードが無効です。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ / 返信", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", alertEmpty: "メッセージを入力してください！", alertEmail: "有効なメールアドレス（@を含む）を入力してください。", alertTokenFail: "コードとメールの組み合わせが見つかりません。新規作成の場合はコード欄を空にしてください。", submitHint: "* 新規はコード欄を空にしてください。返信の場合は5桁のコードを入力してください。", homeFAQ: "❓ よくある質問", homeSubmit: "📝 送信 / 返信", homeCheck: "🔍 返信を確認", homeContact: "📞 お問い合わせ", contactTitle: "連絡先", backHome: "🔙 メインメニュー", backList: "🔙 リストに戻る" },
-        zh: { title: "技術支援", placeholder: "請描述您遇到的問題...", searching: "查詢中...", notFound: "查無此單號與信箱組合，請重新確認。", processing: "開發者正在處理中...", developerReply: "開發者回覆", submitTitle: "新增留言 / 繼續對話", checkTitle: "查詢進度", btnSubmit: "📤 送出", btnSearch: "🔍 查詢", alertEmpty: "請填寫您遇到的問題再點擊送出！", alertEmail: "請填寫有效的電子信箱（需包含 @ 符號）。", alertTokenFail: "查無此單號與信箱組合，無法進行連串對話。\n請檢查單號，或將單號欄位留空以建立全新工單。", submitHint: "* 建立新工單請將單號留空；若要針對舊問題繼續對話，請輸入 5 碼單號。", homeFAQ: "❓ 常見問題列表", homeSubmit: "📝 新增留言 / 續問", homeCheck: "🔍 查詢對話回覆", homeContact: "📞 聯絡我們", contactTitle: "聯絡資訊", backHome: "🔙 返回主選單", backList: "🔙 返回問題列表" }
+        en: { title: "Support", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Invalid Email or Ticket Code.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request / Reply", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", alertEmpty: "Please enter a message!", alertEmail: "Please enter a valid email address containing '@'.", alertTokenFail: "Invalid Ticket Code and Email combination. Please leave the code field blank if you want to create a new ticket.", submitHint: "* Leave Ticket Code blank for new issues. Enter your 5-character code to reply to an existing thread.", homeFAQ: "❓ FAQ", homeSubmit: "📝 Submit / Reply", homeCheck: "🔍 Check Status", homeContact: "📞 Contact Us", contactTitle: "Contact Info", backHome: "🔙 Main Menu", backList: "🔙 Back to List", successTitle: "Success!", successDesc: "Please copy your Ticket Code:", copyBtn: "Copy", copiedTxt: "Copied!", successHint: "Use your Email + Ticket Code to check replies later." },
+        ja: { title: "サポート", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "メールアドレスまたはコードが無効です。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ / 返信", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", alertEmpty: "メッセージを入力してください！", alertEmail: "有効なメールアドレス（@を含む）を入力してください。", alertTokenFail: "コードとメールの組み合わせが見つかりません。新規作成の場合はコード欄を空にしてください。", submitHint: "* 新規はコード欄を空にしてください。返信の場合は5桁のコードを入力してください。", homeFAQ: "❓ よくある質問", homeSubmit: "📝 送信 / 返信", homeCheck: "🔍 返信を確認", homeContact: "📞 お問い合わせ", contactTitle: "連絡先", backHome: "🔙 メインメニュー", backList: "🔙 リストに戻る", successTitle: "作成成功", successDesc: "チケットコードをコピーして保存してください:", copyBtn: "コピー", copiedTxt: "コピーしました！", successHint: "後で返信を確認するには、メールアドレスとコードが必要です。" },
+        zh: { title: "技術支援", placeholder: "請描述您遇到的問題...", searching: "查詢中...", notFound: "查無此單號與信箱組合，請重新確認。", processing: "開發者正在處理中...", developerReply: "開發者回覆", submitTitle: "新增留言 / 繼續對話", checkTitle: "查詢進度", btnSubmit: "📤 送出", btnSearch: "🔍 查詢", alertEmpty: "請填寫您遇到的問題再點擊送出！", alertEmail: "請填寫有效的電子信箱（需包含 @ 符號）。", alertTokenFail: "查無此單號與信箱組合，無法進行連串對話。\n請檢查單號，或將單號欄位留空以建立全新工單。", submitHint: "* 建立新工單請將單號留空；若要針對舊問題繼續對話，請輸入 5 碼單號。", homeFAQ: "❓ 常見問題列表", homeSubmit: "📝 新增留言 / 續問", homeCheck: "🔍 查詢對話回覆", homeContact: "📞 聯絡我們", contactTitle: "聯絡資訊", backHome: "🔙 返回主選單", backList: "🔙 返回問題列表", successTitle: "建立成功", successDesc: "請複製並妥善保存您的查詢單號：", copyBtn: "複製", copiedTxt: "已複製！", successHint: "日後需使用「信箱 + 此單號」查詢回覆或續問。" }
     };
 
     function initSupabase() {
@@ -114,7 +131,6 @@
         }
     }
 
-    // 生成 5 碼英數隨機單號 (避開容易混淆的 0, O, I, l)
     function generate5CharToken() {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789';
         let result = '';
@@ -129,7 +145,7 @@
     };
 
     window.switchView = function(viewId) {
-        ['viewHome', 'viewFAQ', 'viewFAQAnswer', 'viewSubmit', 'viewCheck', 'viewContact'].forEach(id => {
+        ['viewHome', 'viewFAQ', 'viewFAQAnswer', 'viewSubmit', 'viewCheck', 'viewContact', 'viewSuccess'].forEach(id => {
             document.getElementById(id).style.display = 'none';
         });
         document.getElementById(viewId).style.display = viewId === 'viewHome' ? 'flex' : 'block';
@@ -148,15 +164,29 @@
         document.getElementById('btnSearchTicket').innerText = uiText[lang].btnSearch;
         document.getElementById('submitHint').innerText = uiText[lang].submitHint;
         
+        document.getElementById('successTitle').innerText = uiText[lang].successTitle;
+        document.getElementById('successDesc').innerText = uiText[lang].successDesc;
+        document.getElementById('btnCopyCode').innerText = uiText[lang].copyBtn;
+        document.getElementById('successHint').innerText = uiText[lang].successHint;
+        
         document.getElementById('btnGoFAQ').innerText = uiText[lang].homeFAQ;
         document.getElementById('btnGoSubmit').innerText = uiText[lang].homeSubmit;
         document.getElementById('btnGoCheck').innerText = uiText[lang].homeCheck;
         document.getElementById('btnGoContact').innerText = uiText[lang].homeContact;
         
-        [1, 2, 3, 4].forEach(i => document.getElementById(`btnBackHome${i}`).innerText = uiText[lang].backHome);
+        [1, 2, 3, 4, 5].forEach(i => document.getElementById(`btnBackHome${i}`).innerText = uiText[lang].backHome);
         document.getElementById('btnBackFAQList').innerText = uiText[lang].backList;
         
         window.switchView('viewHome');
+    };
+
+    window.copyToken = function() {
+        const copyText = document.getElementById("successTokenDisplay");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); 
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            alert(uiText[currentLang].copiedTxt);
+        });
     };
 
     window.renderFAQ = async function() {
@@ -193,19 +223,16 @@
         const inputToken = document.getElementById('userToken').value.trim();
         const messageText = document.getElementById('userMsg').value.trim();
 
-        // 防呆驗證
         if (!emailText || !emailText.includes('@')) return alert(uiText[currentLang].alertEmail);
         if (!messageText) return alert(uiText[currentLang].alertEmpty);
 
         if (inputToken) {
-            // 【情境乙】續問：檢查信箱+單號是否存在
             const { data, error } = await dbClient.from('tickets').select('user_message').eq('ticket_code', inputToken).eq('email', emailText).single();
             if (error || !data) {
                 alert(uiText[currentLang].alertTokenFail);
-                document.getElementById('userToken').value = ''; // 清空錯誤單號
+                document.getElementById('userToken').value = ''; 
                 return;
             }
-            // 存在，將新訊息追加在舊訊息下方
             const newMsg = data.user_message + "\n\n[續問] " + messageText;
             const { error: updateErr } = await dbClient.from('tickets').update({ user_message: newMsg }).eq('ticket_code', inputToken).eq('email', emailText);
             
@@ -218,19 +245,16 @@
             }
 
         } else {
-            // 【情境甲】新單：生成 5 碼單號
             const code = generate5CharToken();
             const { error } = await dbClient.from('tickets').insert([{ ticket_code: code, email: emailText, language: currentLang, user_message: messageText }]);
 
             if (error) {
                 alert('Error creating ticket.');
             } else {
-                const successAlert = currentLang === 'zh' 
-                    ? `【工單建立成功！】\n\n您的查詢單號為：${code}\n\n請務必妥善複製並記住此單號，以便日後查詢回覆與繼續對話！`
-                    : `【SUCCESS】\n\nYour Ticket Code: ${code}\n\nPlease save it for future reference!`;
-                alert(successAlert);
+                // 【修改點】不再跳 alert，而是切換到精美的專屬成功頁面
                 document.getElementById('userMsg').value = '';
-                window.switchView('viewHome');
+                document.getElementById('successTokenDisplay').value = code;
+                window.switchView('viewSuccess');
             }
         }
     };
