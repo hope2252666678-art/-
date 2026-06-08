@@ -3,245 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Support Ticket System</title>
+    <title>FAQ & Support</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; }
         .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
         .chat-bubble { width: 60px; height: 60px; background: #2b2b2b; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.3s; }
-        .chat-bubble:hover { transform: scale(1.1); }
-        .chat-box { display: none; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); position: absolute; bottom: 80px; right: 0; flex-direction: column; overflow: hidden; }
+        .chat-box { display: none; width: 350px; height: 550px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); position: absolute; bottom: 80px; right: 0; flex-direction: column; overflow: hidden; border: 1px solid #eee; }
         .chat-header { background: #2b2b2b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .lang-btn { cursor: pointer; padding: 4px 8px; margin-left: 5px; background: #444; border-radius: 4px; font-size: 12px; transition: 0.2s; color: white; border: none;}
-        .lang-btn:hover { background: #007bff; }
-        .chat-body { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .faq-item { background: #f8f9fa; padding: 12px; border-left: 4px solid #007bff; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 14px; margin-bottom: 10px; }
-        .faq-item:hover { background: #e2e6ea; }
-        textarea, input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 10px; }
-        textarea { resize: none; height: 100px; }
-        .hint-text { font-size: 11px; color: #6c757d; margin-top: -8px; margin-bottom: 10px; display: block; line-height: 1.4; }
-        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #0056b3; }
-        .btn-secondary { background: #6c757d; margin-top: 10px; }
-        .btn-secondary:hover { background: #5a6268; }
-        .nav-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .nav-buttons button { font-size: 13px; background: #e9ecef; color: #333; }
-        .nav-buttons button:hover { background: #d3d9df; }
+        .lang-btn { cursor: pointer; padding: 4px 8px; margin-left: 3px; background: #444; border-radius: 4px; font-size: 11px; color: white; border: none; }
+        .chat-body { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .menu-btn { background: #fff; border: 1px solid #007bff; color: #007bff; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; }
+        .menu-btn:hover { background: #007bff; color: white; }
+        .faq-item { background: #f8f9fa; padding: 12px; border-left: 4px solid #007bff; border-radius: 4px; cursor: pointer; font-size: 14px; margin-bottom: 8px; }
+        .answer-box { background: #f1f8ff; padding: 12px; border-radius: 6px; font-size: 14px; line-height: 1.5; border: 1px solid #bde0ff; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 8px; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-secondary { background: #6c757d; margin-top: 5px; }
+        .privacy-box { font-size: 11px; color: #666; background: #f9f9f9; padding: 8px; border: 1px dashed #ccc; margin-bottom: 10px; }
+        .copy-area { display: flex; gap: 5px; }
+        .copy-area input { font-weight: bold; color: #007bff; letter-spacing: 2px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="chat-widget">
     <div class="chat-bubble" onclick="toggleChat()">💬</div>
-    
     <div class="chat-box" id="chatBox">
         <div class="chat-header">
-            <span id="headerTitle">Support</span>
+            <span id="headerTitle">客服聯繫</span>
             <div>
                 <button class="lang-btn" onclick="switchLang('en')">EN</button>
-                <button class="lang-btn" onclick="switchLang('ja')">JA</button>
                 <button class="lang-btn" onclick="switchLang('zh')">ZH</button>
             </div>
         </div>
-        
-        <div class="chat-body">
-            <div id="viewFAQ">
-                <div id="faqList"></div>
-                <div class="nav-buttons">
-                    <button onclick="switchView('viewSubmit')">📝 留言給我們</button>
-                    <button onclick="switchView('viewCheck')">🔍 查詢回覆</button>
+        <div class="chat-body" id="mainBody">
+            <div id="viewHome">
+                <div class="menu-btn" onclick="switchView('viewFAQ')">❓ 常見問題</div>
+                <div style="height:10px"></div>
+                <div class="menu-btn" onclick="switchView('viewContact')">📞 客服聯繫</div>
+                <div style="height:10px"></div>
+                <div class="menu-btn" onclick="switchView('viewSubmit')">📝 新增留言 / 續問</div>
+                <div style="height:10px"></div>
+                <div class="menu-btn" onclick="switchView('viewCheck')">🔍 查詢回覆</div>
+            </div>
+
+            <div id="viewFAQ" style="display:none;"><div id="faqList"></div><button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button></div>
+            <div id="viewFAQAnswer" style="display:none;"><div class="answer-box" id="faqAnswerContent"></div><button class="btn-secondary" onclick="switchView('viewFAQ')">🔙 返回列表</button></div>
+            <div id="viewContact" style="display:none;">
+                <div class="answer-box">LINE: @pop55<br>WeChat: pop4437t</div>
+                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button>
+            </div>
+            <div id="viewSubmit" style="display:none;">
+                <input type="email" id="userEmail" placeholder="電子信箱 (必填)">
+                <input type="text" id="userToken" placeholder="查詢單號 (新單留空，續問請填)" maxlength="5">
+                <textarea id="userMsg" placeholder="請描述問題..."></textarea>
+                <div class="privacy-box">
+                    1.本系統採去中心化匿名架構，請勿提交敏感個資。<br>
+                    2.對話紀錄將於 7 天內銷毀。<br>
+                    3.單號遺失恕無法找回。
                 </div>
+                <button onclick="submitTicket()">📤 送出</button>
+                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button>
             </div>
-
-            <div id="viewSubmit" style="display: none;">
-                <h4 style="margin-top:0;" id="submitTitle">Submit a Request</h4>
-                
-                <input type="email" id="userEmail" placeholder="Your Email (Optional) / 您的電子信箱 (選填)">
-                <span class="hint-text" id="emailHint">* We highly recommend entering your email to prevent losing your Ticket Code. / 建議填寫信箱，系統會同步紀錄，比較不會忘記您的查詢代號。</span>
-                
-                <textarea id="userMsg" placeholder="Please describe your issue..."></textarea>
-                
-                <button onclick="submitTicket()" id="btnSubmitTicket">📤 Submit / 送出</button>
-                <button class="btn-secondary" onclick="switchView('viewFAQ')" id="btnBack1">🔙 Back / 返回</button>
+            <div id="viewCheck" style="display:none;">
+                <input type="email" id="checkEmail" placeholder="電子信箱">
+                <input type="text" id="checkToken" placeholder="查詢單號" maxlength="5">
+                <button onclick="checkReply()">🔍 查詢</button>
+                <div id="replyResult" style="margin-top:10px; display:none;" class="answer-box"></div>
+                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button>
             </div>
-
-            <div id="viewCheck" style="display: none;">
-                <h4 style="margin-top:0;" id="checkTitle">Check Reply</h4>
-                <input type="text" id="searchCode" placeholder="Enter Ticket Code (e.g. TK-XXXXXX)">
-                <button onclick="checkReply()" id="btnSearchTicket">🔍 Search / 查詢</button>
-                <div id="replyResult" style="margin-top: 15px; padding: 10px; background: #f1f8ff; border-radius: 6px; font-size: 14px; white-space: pre-wrap; display:none;"></div>
-                <button class="btn-secondary" onclick="switchView('viewFAQ')" id="btnBack2">🔙 Back / 返回</button>
+            <div id="viewSuccess" style="display:none; text-align:center;">
+                <h3>建立成功</h3>
+                <div class="copy-area"><input type="text" id="successToken" readonly><button onclick="copyToken()">複製</button></div>
+                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回首頁</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // 1. 初始化 Supabase
-    // ==========================================
-    const DB_URL = 'https://rsuzxlpohnojylqfegtf.supabase.co';
-    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c';
-    const dbClient = window.supabase.createClient(DB_URL, DB_KEY);
+    const dbClient = window.supabase.createClient('https://rsuzxlpohnojylqfegtf.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c');
 
-    let currentLang = 'en';
-    
-    const uiText = {
-        en: { title: "Support", submitBtn: "📝 Leave a Message", checkBtn: "🔍 Check Ticket", placeholder: "Describe your issue...", searching: "Searching...", notFound: "Ticket not found.", processing: "Developer is processing...", developerReply: "Developer Reply", submitTitle: "Submit a Request", checkTitle: "Check Reply", btnSubmit: "📤 Submit", btnSearch: "🔍 Search", btnBack: "🔙 Back", emailHint: "* We highly recommend entering your email to prevent losing your Ticket Code.", alertEmpty: "Please describe your issue before submitting!" },
-        ja: { title: "サポート", submitBtn: "📝 メッセージを残す", checkBtn: "🔍 返信を確認", placeholder: "問題をご記入ください...", searching: "検索中...", notFound: "チケットが見つかりません。", processing: "現在対応中です...", developerReply: "開発者の返信", submitTitle: "お問い合わせ", checkTitle: "返信を確認", btnSubmit: "📤 送信", btnSearch: "🔍 検索", btnBack: "🔙 戻る", emailHint: "* チケットコードを紛失しないよう、メールアドレスの入力をお勧めします。", alertEmpty: "問題を入力してください！" },
-        zh: { title: "技術支援", submitBtn: "📝 留言給開發者", checkBtn: "🔍 查詢對話回覆", placeholder: "請描述您遇到的問題...", searching: "查詢中...", notFound: "找不到此代號。", processing: "開發者正在處理中...", developerReply: "開發者回覆", submitTitle: "提交問題", checkTitle: "查詢進度", btnSubmit: "📤 送出", btnSearch: "🔍 查詢", btnBack: "🔙 返回", emailHint: "* 建議填寫信箱，系統會同步紀錄，比較不會忘記您的查詢代號。", alertEmpty: "請填寫您遇到的問題再點擊送出！" }
+    window.toggleChat = () => { document.getElementById('chatBox').style.display = document.getElementById('chatBox').style.display === 'flex' ? 'none' : 'flex'; };
+    window.switchView = (id) => {
+        ['viewHome','viewFAQ','viewFAQAnswer','viewContact','viewSubmit','viewCheck','viewSuccess'].forEach(v => document.getElementById(v).style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        if(id === 'viewFAQ') renderFAQ();
     };
 
-    // ==========================================
-    // 2. UI 互動與開關
-    // ==========================================
-    window.toggleChat = function() {
-        const box = document.getElementById('chatBox');
-        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-        if(box.style.display === 'flex') window.renderFAQ();
-    };
-
-    window.switchView = function(viewId) {
-        document.getElementById('viewFAQ').style.display = 'none';
-        document.getElementById('viewSubmit').style.display = 'none';
-        document.getElementById('viewCheck').style.display = 'none';
-        document.getElementById(viewId).style.display = 'block';
-        document.getElementById('replyResult').style.display = 'none'; 
-    };
-
-    window.switchLang = function(lang) {
-        currentLang = lang;
-        document.getElementById('headerTitle').innerText = uiText[lang].title;
-        document.getElementById('userMsg').placeholder = uiText[lang].placeholder;
-        document.getElementById('submitTitle').innerText = uiText[lang].submitTitle;
-        document.getElementById('checkTitle').innerText = uiText[lang].checkTitle;
-        document.getElementById('btnSubmitTicket').innerText = uiText[lang].btnSubmit;
-        document.getElementById('btnSearchTicket').innerText = uiText[lang].btnSearch;
-        document.getElementById('btnBack1').innerText = uiText[lang].btnBack;
-        document.getElementById('btnBack2').innerText = uiText[lang].btnBack;
-        document.getElementById('emailHint').innerText = uiText[lang].emailHint;
-        window.renderFAQ();
-        window.switchView('viewFAQ');
-    };
-
-    // 🔊 語音功能已徹底拔除，此函式保持靜音，防止使用者被嚇到
-    window.speak = function(text, lang) {
-        window.speechSynthesis.cancel(); 
-        // 保持絕對安靜
-    };
-
-    // ==========================================
-    // 3. 核心資料撈取：從 Supabase 的 faqs 表格中即時讀取資料
-    // ==========================================
-    window.renderFAQ = async function() {
+    async function renderFAQ() {
         const list = document.getElementById('faqList');
-        list.innerHTML = 'Loading...';
-
-        // 去雲端 faqs 表格撈取符合當前語言的問答
-        const { data: cloudFaqs, error } = await dbClient
-            .from('faqs')
-            .select('question, answer')
-            .eq('lang', currentLang);
-
+        const { data } = await dbClient.from('faqs').select('question, answer');
         list.innerHTML = '';
-
-        if (error || !cloudFaqs || cloudFaqs.length === 0) {
-            // 如果雲端暫時沒資料，顯示一個溫馨小提示
-            const tip = document.createElement('div');
-            tip.style.fontSize = '13px';
-            tip.style.color = '#888';
-            tip.innerText = currentLang === 'zh' ? '暫無常見問答。' : (currentLang === 'ja' ? 'FAQはまだありません。' : 'No FAQ available.');
-            list.appendChild(tip);
-        } else {
-            // 循環渲染每一條從 Supabase 撈出來的問答
-            cloudFaqs.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'faq-item';
-                div.innerText = item.question;
-                div.onclick = () => { alert(item.answer); }; // 點擊直接彈窗顯示答案
-                list.appendChild(div);
-            });
-        }
-
-        const navBtns = document.querySelectorAll('.nav-buttons button');
-        navBtns[0].innerText = uiText[currentLang].submitBtn;
-        navBtns[1].innerText = uiText[currentLang].checkBtn;
-    };
-
-    function generateTicketCode() {
-        return 'TK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        data?.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'faq-item';
+            div.innerText = item.question;
+            div.onclick = () => { document.getElementById('faqAnswerContent').innerText = item.answer; switchView('viewFAQAnswer'); };
+            list.appendChild(div);
+        });
     }
 
-    // ==========================================
-    // 4. 表單驗證與送出工單
-    // ==========================================
-    window.submitTicket = async function() {
-        const messageText = document.getElementById('userMsg').value.trim();
-        const emailText = document.getElementById('userEmail').value.trim();
+    async function submitTicket() {
+        const email = document.getElementById('userEmail').value.trim();
+        const token = document.getElementById('userToken').value.trim();
+        const msg = document.getElementById('userMsg').value.trim();
+        if(!email.includes('@') || !msg) return alert('請填寫完整資訊');
         
-        // 【優化點 1】嚴格驗證：如果沒輸入內容，禁止送出
-        if (!messageText) {
-            alert(uiText[currentLang].alertEmpty);
-            return;
-        }
-
-        const code = generateTicketCode();
-        
-        // 為了支援未來的信箱欄位，如果你的 tickets 表格有加 email 欄位會自動寫入
-        // 如果 tickets 沒有 email 欄位，這行一樣能跑，Supabase 會自動忽略不認得的欄位
-        const { error } = await dbClient.from('tickets').insert([
-            { 
-                ticket_code: code, 
-                language: currentLang, 
-                user_message: messageText + (emailText ? `\n(User Email: ${emailText})` : '')
-            }
-        ]);
-
-        if (error) {
-            console.error(error);
-            alert('送出失敗！請確認連線。');
+        if(token) {
+            const { data } = await dbClient.from('tickets').select('user_message').eq('ticket_code', token).eq('email', email).single();
+            if(!data) return alert('查無此組合');
+            await dbClient.from('tickets').update({user_message: data.user_message + "\n\n[續問]" + msg}).eq('ticket_code', token);
+            alert('已成功追加');
         } else {
-            const successMsg = currentLang === 'zh' 
-                ? `【送出成功】\n\n您的查詢代號是：${code}\n${emailText ? '提示：系統已記錄您的信箱。' : ''}\n請妥善保存，以便日後查詢回覆！`
-                : `【SUCCESS】\n\nYour Ticket Code: ${code}\nPlease save it!`;
-            alert(successMsg);
-            document.getElementById('userMsg').value = '';
-            document.getElementById('userEmail').value = '';
-            window.switchView('viewFAQ');
+            const code = Math.random().toString(36).substring(2, 7).toUpperCase();
+            await dbClient.from('tickets').insert([{ticket_code: code, email, user_message: msg}]);
+            document.getElementById('successToken').value = code;
+            switchView('viewSuccess');
         }
-    };
+    }
 
-    window.checkReply = async function() {
-        const inputCode = document.getElementById('searchCode').value.trim().toUpperCase();
-        if (!inputCode) return;
+    async function checkReply() {
+        const email = document.getElementById('checkEmail').value.trim();
+        const token = document.getElementById('checkToken').value.trim();
+        const res = document.getElementById('replyResult');
+        const { data } = await dbClient.from('tickets').select('user_message, admin_reply').eq('ticket_code', token).eq('email', email).single();
+        res.style.display = 'block';
+        res.innerText = data ? `Q: ${data.user_message}\n\nA: ${data.admin_reply || '處理中...'}` : '查無資料';
+    }
 
-        const resultArea = document.getElementById('replyResult');
-        resultArea.style.display = 'block';
-        resultArea.innerText = uiText[currentLang].searching;
-
-        const { data, error } = await dbClient
-            .from('tickets')
-            .select('user_message, admin_reply')
-            .eq('ticket_code', inputCode)
-            .single();
-
-        if (error || !data) {
-            resultArea.innerText = uiText[currentLang].notFound;
-            return;
-        }
-
-        let text = `Q: ${data.user_message}\n\n`;
-        if (data.admin_reply) {
-            text += `A (${uiText[currentLang].developerReply}):\n${data.admin_reply}`;
-        } else {
-            text += `A: ${uiText[currentLang].processing}`;
-        }
-        resultArea.innerText = text;
-    };
-
-    // 啟動預設語言
-    window.switchLang('en');
+    function copyToken() {
+        navigator.clipboard.writeText(document.getElementById('successToken').value);
+        alert('已複製');
+    }
 </script>
 </body>
 </html>
