@@ -70,7 +70,7 @@
                         <div class="qr-section">
                             <strong style="color: #00c300;">💬 LINE 官方客服</strong>
                             <span style="font-size: 13px; color: #555;">@pop55</span>
-                            <img src="https://github.com/hope2252666678-art/support-service-ax942b/blob/7c4f45286852c1f81c4e0010f826c04906bbf2ea/Snipaste_2026-06-08_16-20-07.png" alt="LINE QR" class="qr-img">
+                            <img src="https://github.com/hope2252666678-art/support-service-ax942b/raw/7c4f45286852c1f81c4e0010f826c04906bbf2ea/Snipaste_2026-06-08_16-20-07.png" alt="LINE QR" class="qr-img">
                         </div>
                         <div class="qr-section">
                             <strong style="color: #07c160;">📱 微信客服 (WeChat)</strong>
