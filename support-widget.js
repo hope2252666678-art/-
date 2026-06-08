@@ -59,7 +59,7 @@
             <div class="chat-body">
                 <div id="viewHome" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
                     <div class="menu-btn" onclick="window.switchView('viewFAQ')" id="btnGoFAQ">❓ 常見問題</div>
-                    <div class="menu-btn" onclick="window.switchView('viewContact')" id="btnGoContact" style="background:#f8f9fa; border-color:#ccc; color:#555;">📞 聯絡我們 (合作邀請)</div>
+                    <div class="menu-btn" onclick="window.switchView('viewContact')" id="btnGoContact">📞 聯絡我們 (合作邀請)</div>
                     <div class="menu-btn" onclick="window.switchView('viewSubmit')" id="btnGoSubmit">📝 新增留言 / 續問</div>
                     <div class="menu-btn" onclick="window.switchView('viewCheck')" id="btnGoCheck">🔍 查詢對話回覆</div>
                 </div>
