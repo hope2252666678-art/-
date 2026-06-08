@@ -2,141 +2,14 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ & Support</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; }
-        .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
-        .chat-bubble { width: 60px; height: 60px; background: #2b2b2b; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: 0.3s; }
-        .chat-box { display: none; width: 350px; height: 550px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); position: absolute; bottom: 80px; right: 0; flex-direction: column; overflow: hidden; border: 1px solid #eee; }
-        .chat-header { background: #2b2b2b; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .lang-btn { cursor: pointer; padding: 4px 8px; margin-left: 3px; background: #444; border-radius: 4px; font-size: 11px; color: white; border: none; }
-        .chat-body { padding: 20px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .menu-btn { background: #fff; border: 1px solid #007bff; color: #007bff; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; }
-        .menu-btn:hover { background: #007bff; color: white; }
-        .faq-item { background: #f8f9fa; padding: 12px; border-left: 4px solid #007bff; border-radius: 4px; cursor: pointer; font-size: 14px; margin-bottom: 8px; }
-        .answer-box { background: #f1f8ff; padding: 12px; border-radius: 6px; font-size: 14px; line-height: 1.5; border: 1px solid #bde0ff; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 8px; }
-        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-secondary { background: #6c757d; margin-top: 5px; }
-        .privacy-box { font-size: 11px; color: #666; background: #f9f9f9; padding: 8px; border: 1px dashed #ccc; margin-bottom: 10px; }
-        .copy-area { display: flex; gap: 5px; }
-        .copy-area input { font-weight: bold; color: #007bff; letter-spacing: 2px; text-align: center; }
-    </style>
+    <title>我的客服外掛測試基地</title>
 </head>
 <body>
 
-<div class="chat-widget">
-    <div class="chat-bubble" onclick="toggleChat()">💬</div>
-    <div class="chat-box" id="chatBox">
-        <div class="chat-header">
-            <span id="headerTitle">客服聯繫</span>
-            <div>
-                <button class="lang-btn" onclick="switchLang('en')">EN</button>
-                <button class="lang-btn" onclick="switchLang('zh')">ZH</button>
-            </div>
-        </div>
-        <div class="chat-body" id="mainBody">
-            <div id="viewHome">
-                <div class="menu-btn" onclick="switchView('viewFAQ')">❓ 常見問題</div>
-                <div style="height:10px"></div>
-                <div class="menu-btn" onclick="switchView('viewContact')">📞 客服聯繫</div>
-                <div style="height:10px"></div>
-                <div class="menu-btn" onclick="switchView('viewSubmit')">📝 新增留言 / 續問</div>
-                <div style="height:10px"></div>
-                <div class="menu-btn" onclick="switchView('viewCheck')">🔍 查詢回覆</div>
-            </div>
+    <h1>🚀 歡迎來到我的測試網站</h1>
+    <p>這是一個模擬別人網站的空白網頁，用來測試我們的客服泡泡掛件。</p>
 
-            <div id="viewFAQ" style="display:none;"><div id="faqList"></div><button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button></div>
-            <div id="viewFAQAnswer" style="display:none;"><div class="answer-box" id="faqAnswerContent"></div><button class="btn-secondary" onclick="switchView('viewFAQ')">🔙 返回列表</button></div>
-            <div id="viewContact" style="display:none;">
-                <div class="answer-box">LINE: @pop55<br>WeChat: pop4437t</div>
-                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button>
-            </div>
-            <div id="viewSubmit" style="display:none;">
-                <input type="email" id="userEmail" placeholder="電子信箱 (必填)">
-                <input type="text" id="userToken" placeholder="查詢單號 (新單留空，續問請填)" maxlength="5">
-                <textarea id="userMsg" placeholder="請描述問題..."></textarea>
-                <div class="privacy-box">
-                    1.本系統採去中心化匿名架構，請勿提交敏感個資。<br>
-                    2.對話紀錄將於 7 天內銷毀。<br>
-                    3.單號遺失恕無法找回。
-                </div>
-                <button onclick="submitTicket()">📤 送出</button>
-                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button>
-            </div>
-            <div id="viewCheck" style="display:none;">
-                <input type="email" id="checkEmail" placeholder="電子信箱">
-                <input type="text" id="checkToken" placeholder="查詢單號" maxlength="5">
-                <button onclick="checkReply()">🔍 查詢</button>
-                <div id="replyResult" style="margin-top:10px; display:none;" class="answer-box"></div>
-                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回</button>
-            </div>
-            <div id="viewSuccess" style="display:none; text-align:center;">
-                <h3>建立成功</h3>
-                <div class="copy-area"><input type="text" id="successToken" readonly><button onclick="copyToken()">複製</button></div>
-                <button class="btn-secondary" onclick="switchView('viewHome')">🔙 返回首頁</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <script src="https://hope2252666678-art.github.io/support-service-ax942b/support-widget.js"></script>
 
-<script>
-    const dbClient = window.supabase.createClient('https://rsuzxlpohnojylqfegtf.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdXp4bHBvaG5vanlscWZlZ3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2MzkwMzQsImV4cCI6MjA5NjIxNTAzNH0.kyX4jlTLc2sJCQxVOEISzNmTue_nohb1NF7FLemy10c');
-
-    window.toggleChat = () => { document.getElementById('chatBox').style.display = document.getElementById('chatBox').style.display === 'flex' ? 'none' : 'flex'; };
-    window.switchView = (id) => {
-        ['viewHome','viewFAQ','viewFAQAnswer','viewContact','viewSubmit','viewCheck','viewSuccess'].forEach(v => document.getElementById(v).style.display = 'none');
-        document.getElementById(id).style.display = 'block';
-        if(id === 'viewFAQ') renderFAQ();
-    };
-
-    async function renderFAQ() {
-        const list = document.getElementById('faqList');
-        const { data } = await dbClient.from('faqs').select('question, answer');
-        list.innerHTML = '';
-        data?.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'faq-item';
-            div.innerText = item.question;
-            div.onclick = () => { document.getElementById('faqAnswerContent').innerText = item.answer; switchView('viewFAQAnswer'); };
-            list.appendChild(div);
-        });
-    }
-
-    async function submitTicket() {
-        const email = document.getElementById('userEmail').value.trim();
-        const token = document.getElementById('userToken').value.trim();
-        const msg = document.getElementById('userMsg').value.trim();
-        if(!email.includes('@') || !msg) return alert('請填寫完整資訊');
-        
-        if(token) {
-            const { data } = await dbClient.from('tickets').select('user_message').eq('ticket_code', token).eq('email', email).single();
-            if(!data) return alert('查無此組合');
-            await dbClient.from('tickets').update({user_message: data.user_message + "\n\n[續問]" + msg}).eq('ticket_code', token);
-            alert('已成功追加');
-        } else {
-            const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-            await dbClient.from('tickets').insert([{ticket_code: code, email, user_message: msg}]);
-            document.getElementById('successToken').value = code;
-            switchView('viewSuccess');
-        }
-    }
-
-    async function checkReply() {
-        const email = document.getElementById('checkEmail').value.trim();
-        const token = document.getElementById('checkToken').value.trim();
-        const res = document.getElementById('replyResult');
-        const { data } = await dbClient.from('tickets').select('user_message, admin_reply').eq('ticket_code', token).eq('email', email).single();
-        res.style.display = 'block';
-        res.innerText = data ? `Q: ${data.user_message}\n\nA: ${data.admin_reply || '處理中...'}` : '查無資料';
-    }
-
-    function copyToken() {
-        navigator.clipboard.writeText(document.getElementById('successToken').value);
-        alert('已複製');
-    }
-</script>
 </body>
 </html>
